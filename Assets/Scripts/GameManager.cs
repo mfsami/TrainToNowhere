@@ -15,8 +15,8 @@ public class GameManager : MonoBehaviour
     public Button backButton;
     public Button searchButton;
     public Button eatButton;
-    public Button hideButton;   // NEW
-    public Button dashButton;   // NEW
+    public Button hideButton;   
+    public Button dashButton;   
 
     // ===== Tuning =====
     const int START_STAMINA = 10;
@@ -51,19 +51,36 @@ public class GameManager : MonoBehaviour
     int threatPos = 0;
     int turn = 0;
     bool madeNoise = false;       // set true by actions like crowbar pry
-    bool isHiding = false;       // NEW: affects threat behavior
+    bool isHiding = false;       // affects threat behavior
     bool debugShowDistance = false;
+
+    // Protection/knockback & event buffer
+    bool protectThisTurn = false; // skip the threat's move once (dash/weapon save)
+    int prevThreatPos = 0;     // remember where the threat was before moving
+    string lastEventMessage = null; // stores “fight it off” text so UI won’t overwrite
 
     System.Random rng = new System.Random();
 
+    // ===== Camera =====
+    public Transform cameraTarget;   
+    public float carriageSpacing = 10f; // distance between “car centers” along Z
+    public bool smoothCamera = true;
+    public float cameraLerpTime = 0.25f;
+    Coroutine camMove;
+    public bool invertDirection = false; // flip if forward looks backwards
+    int startPlayerPos;
+    float baseZ;
+
     void Start()
     {
+        
+
         forwardButton.onClick.AddListener(MoveForward);
         backButton.onClick.AddListener(MoveBack);
         searchButton.onClick.AddListener(Search);
         eatButton.onClick.AddListener(EatFood);
-        if (hideButton) hideButton.onClick.AddListener(Hide);       // NEW
-        if (dashButton) dashButton.onClick.AddListener(DashPast);   // NEW
+        if (hideButton) hideButton.onClick.AddListener(Hide);
+        if (dashButton) dashButton.onClick.AddListener(DashPast);
 
         // Init random locked doors (don’t lock start or engine)
         locked = new bool[totalCars];
@@ -82,6 +99,10 @@ public class GameManager : MonoBehaviour
         threatPos = Mathf.Clamp(playerPos + (behind ? -d : +d), 0, totalCars - 1);
         if (threatPos == playerPos) threatPos = Mathf.Max(0, playerPos - 1);
 
+        // Capture starting index & Z so camera moves relative to start
+        startPlayerPos = playerPos;
+        baseZ = cameraTarget ? cameraTarget.position.z : 0f;
+        UpdateCameraPosition(true); // snap to the correct spot on load
         UpdateUI("Game Start\n" + BuildClue());
     }
 
@@ -112,6 +133,7 @@ public class GameManager : MonoBehaviour
                 hasCrowbar = false;
                 locked[nextCar] = false;
                 ChangeStamina(-MOVE_COST); // effort to pry
+                UpdateCameraPosition();
                 madeNoise = true;          // crowbar is loud
                 EndTurn($"You pry the lock open. (Door to Car {nextCar} now unlocked)");
                 return;
@@ -125,6 +147,7 @@ public class GameManager : MonoBehaviour
 
         playerPos = nextCar;
         ChangeStamina(-MOVE_COST);
+        UpdateCameraPosition();
         EndTurn($"You moved to Car {playerPos}");
     }
 
@@ -146,6 +169,7 @@ public class GameManager : MonoBehaviour
 
         playerPos--;
         ChangeStamina(-MOVE_COST);
+        UpdateCameraPosition();
         EndTurn($"You moved to Car {playerPos}");
     }
 
@@ -209,7 +233,7 @@ public class GameManager : MonoBehaviour
         EndTurn(msg);
     }
 
-    // NEW: Hide (skip turn; chance the threat passes or skips)
+    // Hide (skip turn; chance the threat passes or skips)
     void Hide()
     {
         if (gameOver) return;
@@ -218,7 +242,7 @@ public class GameManager : MonoBehaviour
         EndTurn("You crawl under a seat and hold your breath…");
     }
 
-    // NEW: Dash Past (only if the threat is exactly 1 ahead)
+    // Dash Past (only if the threat is exactly 1 ahead)
     void DashPast()
     {
         if (gameOver) return;
@@ -247,6 +271,9 @@ public class GameManager : MonoBehaviour
             playerPos = target;
             threatPos = newThreat;
 
+            // i-frames so you don't get insta-caught
+            protectThisTurn = true;
+
             EndTurn("You dash past it! It stumbles forward as you squeeze by.");
         }
         else
@@ -262,10 +289,20 @@ public class GameManager : MonoBehaviour
     // Call at the end of *every* player action
     void EndTurn(string playerMessage)
     {
-        // Threat advances
-        AdvanceThreat();
+        // Threat advances unless protected (dash/weapon save)
+        if (!protectThisTurn)
+            AdvanceThreat();
+        else
+            protectThisTurn = false; // consume protection
 
         if (gameOver) return;
+
+        // Append any special event text (e.g., weapon save) so it isn't overwritten
+        if (!string.IsNullOrEmpty(lastEventMessage))
+        {
+            playerMessage += "\n" + lastEventMessage;
+            lastEventMessage = null;
+        }
 
         // Build clue for the player after threat acts
         string clue = BuildClue();
@@ -276,14 +313,17 @@ public class GameManager : MonoBehaviour
         }
 
         UpdateUI(playerMessage + "\n" + clue);
-        madeNoise = false; // reset noise each turn
-        isHiding = false; // reset hiding each turn
+        madeNoise = false; // reset flags each turn
+        isHiding = false;
         turn++;
     }
 
     void AdvanceThreat()
     {
         if (gameOver) return;
+
+        // record where it was (for knockback direction)
+        prevThreatPos = threatPos;
 
         int distance = Mathf.Abs(playerPos - threatPos);
 
@@ -300,8 +340,8 @@ public class GameManager : MonoBehaviour
                         threatPos = Mathf.Min(playerPos + 1, totalCars - 1);
                     else
                         threatPos = Mathf.Max(playerPos - 1, 0);
-                    CheckCaught();
-                    return;
+
+                    if (CheckCaught()) return;
                 }
                 else
                 {
@@ -314,7 +354,7 @@ public class GameManager : MonoBehaviour
                 // Far away: 60% it skips its move
                 if (Random.value < HIDE_SKIP_FAR)
                 {
-                    CheckCaught();
+                    if (CheckCaught()) return;
                     return;
                 }
                 // else: fall through to normal behavior
@@ -328,28 +368,26 @@ public class GameManager : MonoBehaviour
             if (Random.value < NOISE_JUMP_AHEAD)
                 threatPos = Mathf.Clamp(playerPos + 1, 0, totalCars - 1);
 
-            CheckCaught();
-            return;
+            if (CheckCaught()) return;
         }
-
-        // Ambush if near (jump ahead and wait)
-        if (distance <= 2 && Random.value < AMBUSH_CHANCE_NEAR)
+        else if (distance <= 2 && Random.value < AMBUSH_CHANCE_NEAR)
         {
+            // Ambush if near (jump ahead and wait)
             threatPos = Mathf.Clamp(playerPos + 1, 0, totalCars - 1);
-            CheckCaught();
-            return;
+            if (CheckCaught()) return;
         }
-
-        // Wait if far to create uncertainty
-        if (distance >= 4 && Random.value < WAIT_CHANCE_FAR)
+        else if (distance >= 4 && Random.value < WAIT_CHANCE_FAR)
         {
-            CheckCaught();
+            // Wait if far to create uncertainty
+            if (CheckCaught()) return;
             return; // stays put
         }
-
-        // Patrol: move 1 toward player
-        MoveThreatTowardPlayer(1);
-        CheckCaught();
+        else
+        {
+            // Patrol: move 1 toward player
+            MoveThreatTowardPlayer(1);
+            if (CheckCaught()) return;
+        }
     }
 
     void MoveThreatTowardPlayer(int steps)
@@ -358,12 +396,37 @@ public class GameManager : MonoBehaviour
         else if (threatPos > playerPos) threatPos = Mathf.Max(threatPos - steps, 0);
     }
 
-    void CheckCaught()
+    // Returns true if the caught state was handled (weapon save or death)
+    bool CheckCaught()
     {
-        if (playerPos == threatPos)
+        if (playerPos != threatPos) return false;
+
+        // Weapon always saves once: break it, knock threat back, grant protection
+        if (weapon)
         {
-            EndRun("It finds you. C A U G H T.");
+            weapon = false; // it breaks
+
+            // Determine approach direction from previous position
+            int dir = Mathf.Clamp(threatPos - prevThreatPos, -1, 1);
+            if (dir == 0)
+            {
+                // If unknown, push away from you toward the engine by default
+                dir = (threatPos >= playerPos) ? 1 : -1;
+            }
+
+            // Knock the threat back 2 cars in its approach direction (away from you)
+            threatPos = Mathf.Clamp(playerPos + dir * 2, 0, totalCars - 1);
+
+            // One-turn protection to prevent instant re-catch
+            protectThisTurn = true;
+
+            // Buffer the message so EndTurn shows it (not overwritten)
+            lastEventMessage = "You fight it off! The weapon shatters as it staggers back.";
+            return true;
         }
+
+        EndRun("It finds you. C A U G H T.");
+        return true;
     }
 
     string BuildClue()
@@ -419,11 +482,53 @@ public class GameManager : MonoBehaviour
         // Eat enabled only if you have food
         eatButton.interactable = canAct && food > 0;
 
-        // NEW: Hide is always allowed if not game over
+        // Hide is always allowed if not game over
         if (hideButton) hideButton.interactable = canAct;
 
-        // NEW: Dash only when threat is exactly 1 ahead and you have stamina
+        // Dash only when threat is exactly 1 ahead and you have stamina
         if (dashButton)
             dashButton.interactable = canAct && !exhausted && (threatPos == playerPos + 1) && (playerStamina >= DASH_COST);
+    }
+
+    // ---------------- Camera ----------------
+
+    // call this after any change to playerPos
+    void UpdateCameraPosition(bool instant = false)
+    {
+        if (cameraTarget == null) return;
+
+        int delta = playerPos - startPlayerPos;           // move by difference
+        float sign = invertDirection ? -1f : 1f;
+        float targetZ = baseZ + delta * carriageSpacing * sign;
+
+        Vector3 targetPos = new Vector3(
+            cameraTarget.position.x,
+            cameraTarget.position.y,
+            targetZ
+        );
+
+        if (!smoothCamera || instant)
+        {
+            cameraTarget.position = targetPos;
+        }
+        else
+        {
+            if (camMove != null) StopCoroutine(camMove);
+            camMove = StartCoroutine(LerpCameraTarget(targetPos, cameraLerpTime));
+        }
+    }
+
+    System.Collections.IEnumerator LerpCameraTarget(Vector3 to, float t)
+    {
+        Vector3 from = cameraTarget.position;
+        float elapsed = 0f;
+        while (elapsed < t)
+        {
+            elapsed += Time.deltaTime;
+            float a = Mathf.Clamp01(elapsed / t);
+            cameraTarget.position = Vector3.Lerp(from, to, a);
+            yield return null;
+        }
+        cameraTarget.position = to;
     }
 }
