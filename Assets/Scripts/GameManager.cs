@@ -8,15 +8,34 @@ public class GameManager : MonoBehaviour
     public Transform trainParent; // Parent object that holds all carriages
     public int currentCarIndex;     // Which carriage we are in
     private List<Transform> carriages = new List<Transform>();
+    private List<Transform> targets = new List<Transform>();
+
+    
+    public Transform player;
 
 
     private void Start()
     {
         // Build list of carriages from trainParent children in order
         carriages.Clear();
+        targets.Clear();
+
+        // Loop through parent and count train cars
         for (int i = 0; i < trainParent.childCount; i++)
         {
-            carriages.Add(trainParent.GetChild(i));
+            // Add each car to a list
+            var carriage = trainParent.GetChild(i);
+            carriages.Add(carriage);
+
+            // Locate target for player to spawn at and add to list
+            var t = carriage.Find("CarTarget");
+
+            if (t == null)
+            {
+                Debug.LogError($"CarTarget missing under {carriage.name}");
+            }
+                
+            targets.Add(t);
         }
 
         Debug.Log($"Found {carriages.Count} carriages.");
@@ -31,6 +50,12 @@ public class GameManager : MonoBehaviour
         {
             // Move forward
             currentCarIndex++;
+
+            var target = targets[currentCarIndex];
+            if (target == null) return;
+
+            player.SetPositionAndRotation(target.position, target.rotation);
+            Debug.Log("Moved to carriage: " + currentCarIndex);
             LogCurrentCarriage();
         }
         else
