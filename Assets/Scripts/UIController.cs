@@ -9,6 +9,7 @@ public class UIController : MonoBehaviour
 
     // ------- Text -------
     public TextMeshProUGUI currentCar;
+    public TextMeshProUGUI staminaText;
 
     // ------- References -------
     public GameManager gameManager;
@@ -21,6 +22,7 @@ public class UIController : MonoBehaviour
     private void Update()
     {
         currentCar.text = $"Current Car: {gameManager.currentCarIndex}";
+        staminaText.text = $"Stamina: {gameManager.playerStamina}";
     }
 
     void OnBackClicked()

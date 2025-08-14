@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
     private List<Transform> carriages = new List<Transform>();
     private List<Transform> targets = new List<Transform>();
 
+    public int playerStamina = 3;
+
     
     public Transform player;
 
@@ -48,8 +50,11 @@ public class GameManager : MonoBehaviour
     {
         if (currentCarIndex < carriages.Count - 1)
         {
-            // Move forward
+            // Move forward and reduce stamina
             currentCarIndex++;
+
+            // If stamina exhausted (false), stop and do nothing 
+            if (!TrySpendStamina()) return;
 
             var target = targets[currentCarIndex];
             if (target == null) return;
@@ -69,8 +74,11 @@ public class GameManager : MonoBehaviour
         // If not the first car
         if (currentCarIndex > 0)
         {
+            if (!TrySpendStamina()) return;
+
             // Move back
             currentCarIndex--;
+           
 
             // Check position of car behind current car
             var target = targets[currentCarIndex];
@@ -85,6 +93,24 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("No cars behind you");
         }
+    }
+
+
+    bool TrySpendStamina()
+    {
+        if (playerStamina <= 0)
+        {
+            ExhaustedStamina();
+            return false;
+        }
+        playerStamina -= 1;
+        return true;
+    }
+
+    void ExhaustedStamina()
+    {
+
+        Debug.Log("You are too exhausted to move anymore..");
     }
 
     void LogCurrentCarriage()
