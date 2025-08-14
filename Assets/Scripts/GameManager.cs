@@ -64,6 +64,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void MoveBack()
+    {
+        // If not the first car
+        if (currentCarIndex > 0)
+        {
+            // Move back
+            currentCarIndex--;
+
+            // Check position of car behind current car
+            var target = targets[currentCarIndex];
+            if (target == null) return;
+
+            player.SetPositionAndRotation(target.position, target.rotation);
+            Debug.Log("Moved to carriage: " + currentCarIndex);
+            LogCurrentCarriage();
+        }
+
+        else
+        {
+            Debug.Log("No cars behind you");
+        }
+    }
+
     void LogCurrentCarriage()
     {
         Debug.Log($"Now in carriage index: {currentCarIndex}, name: {carriages[currentCarIndex].name}");
