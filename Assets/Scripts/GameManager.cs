@@ -40,6 +40,12 @@ public class GameManager : MonoBehaviour
             targets.Add(t);
         }
 
+        // Set the players starting position at current index target
+        var target = targets[currentCarIndex];
+        if (target == null) return;
+
+        player.SetPositionAndRotation(target.position, target.rotation);
+
         Debug.Log($"Found {carriages.Count} carriages.");
         LogCurrentCarriage();
 
