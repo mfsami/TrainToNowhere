@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
-    public float health = 3f;
+    public float health = 5f;
 
     private float currentHealth;
 
@@ -16,7 +16,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         currentHealth -= damageAmount;
         Debug.Log("Health:" + currentHealth);
 
-        if(currentHealth < 0)
+        if(currentHealth <= 0)
         {
             Die();
             Debug.Log("Dead");
