@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 public class SwordParryHold : MonoBehaviour
@@ -9,6 +10,9 @@ public class SwordParryHold : MonoBehaviour
     public Transform sword;
     public Transform poseIdle;
     public Transform poseParry;
+    public TextMeshProUGUI parryStyle;
+    public SphereCollider parryTrigger; // isTrigger = true
+    
 
     [Header("Timings")]
     public float raiseTime = 0.06f;
@@ -37,6 +41,9 @@ public class SwordParryHold : MonoBehaviour
             sword.localPosition = poseIdle.localPosition;
             sword.localRotation = poseIdle.localRotation;
         }
+
+        // Disable parry collider
+        parryTrigger.enabled = false;
     }
 
     void Update()
@@ -44,11 +51,13 @@ public class SwordParryHold : MonoBehaviour
         // --- input ---
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
+            parryTrigger.enabled = true;
             HandleBlockPressed();
         }
 
         if (Input.GetKeyUp(KeyCode.Mouse0))
         {
+            parryTrigger.enabled = false;
             HandleBlockReleased();
         }
 
@@ -80,6 +89,9 @@ public class SwordParryHold : MonoBehaviour
 
         // Parry window opens
         isParryWindowActive = true;
+
+        // Collider trigger enabled
+        
         //Debug.Log("Parry window opened. Timer started");
         yield return new WaitForSeconds(parryWindowDuration);
 
@@ -106,18 +118,24 @@ public class SwordParryHold : MonoBehaviour
             Vector3 bulletVel = rb.linearVelocity;
             Vector3 reflectDir = (-bulletVel).normalized;
 
-            Debug.Log("PARRY!");
+            parryStyle.text = "Parry: PERFECT";
             rb.linearVelocity = reflectDir * reflectSpeed;
 
-            // Make bullet face towards dir
-            other.transform.forward = rb.linearVelocity.normalized; 
         }
 
         // Normal block
         else if (isBlocking && other.CompareTag("Bullet"))
         {
-            Debug.Log("Normal block!");
-            Destroy(other.gameObject);
+            parryStyle.text = "Parry: OKAY";
+
+        }
+
+        // Not blocking getting hit
+        else if (!isBlocking && other.CompareTag("Bullet"))
+        {
+            
+            parryStyle.text = "Parry: BAD";
+
         }
     }
 }
