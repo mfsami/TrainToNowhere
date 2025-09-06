@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class EnemyShoot : MonoBehaviour
@@ -15,7 +16,13 @@ public class EnemyShoot : MonoBehaviour
     public float fireInterval = 3f;
     private float shootTimer;
 
-    
+    [Header("Distance refs")]
+    public Transform bulletPos;
+    public Transform parryPos;
+    float DistToParry;
+    public TextMeshProUGUI distanceText;
+
+
 
     void Update()
     {
@@ -31,6 +38,18 @@ public class EnemyShoot : MonoBehaviour
 
             // shoot projectile
             Shoot();
+
+            
+
+            
+        }
+
+        // If the bullet still exists
+        if (bulletPos && parryPos)
+        {
+            // Calculate distance from projectile to parry spot at existence
+            float dist = Vector3.Distance(bulletPos.position, parryPos.position);
+            distanceText.text = $"Distance: {dist:0.0}";
         }
     }
 
@@ -52,8 +71,14 @@ public class EnemyShoot : MonoBehaviour
 
 
             GameObject currentBullet = Instantiate(bullet, FirePoint.position, Quaternion.LookRotation(dir));
+
+            
+
             Rigidbody rb = currentBullet.GetComponent<Rigidbody>();
-            if (rb) rb.linearVelocity = dir * shootForce;  
+            if (rb) rb.linearVelocity = dir * shootForce;
+
+            bulletPos = currentBullet.transform;
+            DistToParry = Vector3.Distance(bulletPos.position, parryPos.position);
         }
     }
 

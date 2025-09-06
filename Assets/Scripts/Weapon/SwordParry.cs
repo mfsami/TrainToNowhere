@@ -30,6 +30,8 @@ public class SwordParry : MonoBehaviour
     public float parryWindowDuration = 0.2f;
     public float reflectSpeed = 150f;
 
+    
+
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     // internal 0..1 blend between idle (0) and parry (1)
@@ -50,6 +52,8 @@ public class SwordParry : MonoBehaviour
 
     void Update()
     {
+
+        
         // --- input ---
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
@@ -132,4 +136,6 @@ public class SwordParry : MonoBehaviour
             parryStyle.text = "Parry: OKAY";
         }
     }
+
+
 }
