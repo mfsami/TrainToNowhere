@@ -23,7 +23,7 @@ public class EnemyShoot : MonoBehaviour
     public TextMeshProUGUI distanceText;
 
     public CircleScale CircleScale;
-    
+    public ParryArrowsUI parryArrowsUI;
 
 
 
@@ -54,9 +54,14 @@ public class EnemyShoot : MonoBehaviour
             float dist = Vector3.Distance(bulletPos.position, parryPos.position);
             distanceText.text = $"Distance: {dist:0.0}";
 
+            if (parryArrowsUI)
+            {
+                parryArrowsUI.UpdateArrows(DistToParry, dist);
+            }
+
             // Scale circle
-            CircleScale.gameObject.SetActive(true);
-            CircleScale.ScaleCircle(DistToParry, dist);
+            //CircleScale.gameObject.SetActive(true);
+            //CircleScale.ScaleCircle(DistToParry, dist);
         }
     }
 

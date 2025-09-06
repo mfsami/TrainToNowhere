@@ -55,13 +55,13 @@ public class SwordParry : MonoBehaviour
 
         
         // --- input ---
-        if (Input.GetKeyDown(KeyCode.Mouse0))
+        if (Input.GetKeyDown(KeyCode.P))
         {
             parryTrigger.enabled = true;
             HandleBlockPressed();
         }
 
-        if (Input.GetKeyUp(KeyCode.Mouse0))
+        if (Input.GetKeyUp(KeyCode.P))
         {
             parryTrigger.enabled = false;
             HandleBlockReleased();
