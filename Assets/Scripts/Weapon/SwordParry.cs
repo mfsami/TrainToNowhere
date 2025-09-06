@@ -2,7 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
-public class SwordParryHold : MonoBehaviour
+public class SwordParry : MonoBehaviour
 {
 
 
@@ -11,7 +11,9 @@ public class SwordParryHold : MonoBehaviour
     public Transform poseIdle;
     public Transform poseParry;
     public TextMeshProUGUI parryStyle;
-    public SphereCollider parryTrigger; // isTrigger = true
+    public BoxCollider parryTrigger; // isTrigger = true
+    public PlayerHealth playerHealth;
+    public bool parried;
     
 
     [Header("Timings")]
@@ -107,35 +109,27 @@ public class SwordParryHold : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        
-        
 
-        if (isParryWindowActive && other.CompareTag("Bullet"))
+
+        if (isParryWindowActive && other.CompareTag("Bullet")) // PERFECT
         {
-            // Grab bullet, reverse it, send it back
             var rb = other.GetComponent<Rigidbody>();
+            if (rb)
+            {
+                var v = rb.linearVelocity;
+                rb.linearVelocity = -v.normalized * reflectSpeed;
+            }
 
-            Vector3 bulletVel = rb.linearVelocity;
-            Vector3 reflectDir = (-bulletVel).normalized;
+            var b = other.GetComponent<Bullet>();
+            if (b) b.parried = true;               // <- mark the specific bullet as parried
 
             parryStyle.text = "Parry: PERFECT";
-            rb.linearVelocity = reflectDir * reflectSpeed;
-
         }
-
-        // Normal block
-        else if (isBlocking && other.CompareTag("Bullet"))
+        else if (isBlocking && other.CompareTag("Bullet"))      // OKAY block
         {
+            if (playerHealth) playerHealth.Damage(0.5f);
+            Destroy(other.gameObject);             // <- consume so it can’t hit the body later
             parryStyle.text = "Parry: OKAY";
-
-        }
-
-        // Not blocking getting hit
-        else if (!isBlocking && other.CompareTag("Bullet"))
-        {
-            
-            parryStyle.text = "Parry: BAD";
-
         }
     }
 }
