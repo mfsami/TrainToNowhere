@@ -22,6 +22,9 @@ public class EnemyShoot : MonoBehaviour
     float DistToParry;
     public TextMeshProUGUI distanceText;
 
+    public CircleScale CircleScale;
+    
+
 
 
     void Update()
@@ -50,6 +53,10 @@ public class EnemyShoot : MonoBehaviour
             // Calculate distance from projectile to parry spot at existence
             float dist = Vector3.Distance(bulletPos.position, parryPos.position);
             distanceText.text = $"Distance: {dist:0.0}";
+
+            // Scale circle
+            CircleScale.gameObject.SetActive(true);
+            CircleScale.ScaleCircle(DistToParry, dist);
         }
     }
 
