@@ -25,6 +25,8 @@ public class EnemyShoot : MonoBehaviour
     public CircleScale CircleScale;
     public ParryArrowsUI parryArrowsUI;
 
+    public bool bulletShot;
+
 
 
     void Update()
@@ -68,12 +70,13 @@ public class EnemyShoot : MonoBehaviour
     void Shoot()
     {
         
-
+        
         Vector3 origin = FirePoint.position + FirePoint.forward * 0.02f;
         Ray ray = new Ray(origin, FirePoint.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, ~0, QueryTriggerInteraction.Ignore))
         {
+            bulletShot = true;
             // Raise a bit to hit head
             Vector3 lifted = hit.point + Vector3.up * yLift;
             Vector3 dir = (lifted - FirePoint.position).normalized;
@@ -92,6 +95,8 @@ public class EnemyShoot : MonoBehaviour
             bulletPos = currentBullet.transform;
             DistToParry = Vector3.Distance(bulletPos.position, parryPos.position);
         }
+
+        bulletShot = false;
     }
 
     void LookAt()

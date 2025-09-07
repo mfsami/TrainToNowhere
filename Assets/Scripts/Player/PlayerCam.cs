@@ -12,6 +12,8 @@ public class PlayerCam : MonoBehaviour
     float xRotation;
     float yRotation;
 
+    public EnemyShoot EnemyShoot;
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
@@ -31,11 +33,23 @@ public class PlayerCam : MonoBehaviour
 
 
     //    playerBody.Rotate(Vector3.up * mouseX);
-        
+
     //}
 
-    private void LateUpdate()
-    {
-        cam.LookAt(enemy.position);
-    }
+    //private void LateUpdate()
+    //{
+    //    EnemyLockOn();
+    //}
+
+    //void EnemyLockOn()
+    //{
+    //    if (EnemyShoot.bulletShot)
+    //    {
+    //        cam.LookAt(enemy.position);
+    //    }
+
+        
+    //}
 }
+
+    

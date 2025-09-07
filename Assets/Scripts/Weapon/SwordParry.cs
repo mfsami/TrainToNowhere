@@ -14,7 +14,9 @@ public class SwordParry : MonoBehaviour
     public BoxCollider parryTrigger; // isTrigger = true
     public PlayerHealth playerHealth;
     public bool parried;
-    
+    public Transform enemy;
+    public Transform cam;
+
 
     [Header("Timings")]
     public float raiseTime = 0.06f;
@@ -87,6 +89,8 @@ public class SwordParry : MonoBehaviour
     {
         isBlocking = true;
         parryRoutine = StartCoroutine(ParryWindow());
+        cam.LookAt(enemy.position);
+
     }
 
     IEnumerator ParryWindow()

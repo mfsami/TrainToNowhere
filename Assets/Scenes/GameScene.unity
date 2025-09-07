@@ -1641,6 +1641,7 @@ MonoBehaviour:
   playerBody: {fileID: 141838480}
   enemy: {fileID: 362530636}
   cam: {fileID: 447573620}
+  EnemyShoot: {fileID: 1737155028}
 --- !u!114 &447573622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2989,6 +2990,7 @@ MonoBehaviour:
   distanceText: {fileID: 2769896}
   CircleScale: {fileID: 1006733175}
   parryArrowsUI: {fileID: 2074148425}
+  bulletShot: 0
 --- !u!1 &1778186490
 GameObject:
   m_ObjectHideFlags: 0
@@ -3168,6 +3170,8 @@ MonoBehaviour:
   parryTrigger: {fileID: 1866522052}
   playerHealth: {fileID: 141838482}
   parried: 0
+  enemy: {fileID: 362530636}
+  cam: {fileID: 447573620}
   raiseTime: 0.06
   lowerTime: 0.1
   parryWindowDuration: 0.1
